@@ -146,9 +146,7 @@ void SetupModel(char* DensityFile, char* NetworkFile, char* SchoolFile, char* Re
 		P.in_degrees_.width_ = P.SpatialBoundingBox[2] - P.SpatialBoundingBox[0];
 		P.in_degrees_.height_ = P.SpatialBoundingBox[3] - P.SpatialBoundingBox[1];
 		P.ncw = 4 * ((int)ceil(P.in_degrees_.width_ / P.in_cells_.width_ / 4));
-		P.total_microcells_wide_ = P.ncw * P.NMCL;
 		P.nch = 4 * ((int)ceil(P.in_degrees_.height_ / P.in_cells_.height_ / 4));
-		P.total_microcells_high_ = P.nch * P.NMCL;
 		P.in_degrees_.width_ = ((double)P.ncw) * P.in_cells_.width_;
 		P.in_degrees_.height_ = ((double)P.nch) * P.in_cells_.height_;
 		P.SpatialBoundingBox[2] = P.SpatialBoundingBox[0] + P.in_degrees_.width_;
@@ -169,8 +167,6 @@ void SetupModel(char* DensityFile, char* NetworkFile, char* SchoolFile, char* Re
 	else
 	{
 		P.ncw = P.nch = (int)sqrt((double)P.NC);
-		P.total_microcells_wide_ = P.ncw * P.NMCL;
-		P.total_microcells_high_ = P.nch * P.NMCL;
 		P.NC = P.ncw * P.nch;
 		fprintf(stderr, "Number of cells adjusted to be %i (%i^2)\n", P.NC, P.ncw);
 		s = floor(sqrt((double)P.PopSize));
@@ -183,6 +179,8 @@ void SetupModel(char* DensityFile, char* NetworkFile, char* SchoolFile, char* Re
 		P.in_cells_.height_ = P.in_degrees_.height_ / ((double)P.nch);
 	}
 	P.NMC = P.NMCL * P.NMCL * P.NC;
+	P.total_microcells_wide_ = P.ncw * P.NMCL;
+	P.total_microcells_high_ = P.nch * P.NMCL;
 	fprintf(stderr, "Number of microcells = %i\n", P.NMC);
 	P.scalex = P.BitmapScale;
 	P.scaley = P.BitmapAspectScale * P.BitmapScale;
