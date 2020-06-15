@@ -2119,45 +2119,58 @@ void AssignPeopleToPlaces()
 					{
 						if (j % 1000 == 0) fprintf(stderr, "(%i) %i      \r", tp, j);
 						for (i2 = 0; i2 < nn; i2++)	NearestPlacesProb[tn][i2] = 0;
-						l = 1; k = m = f2 = 0;
+						k = 0;
 						int i = PeopleArray[j];
 						ic = Hosts[i].mcell;
 
-						MicroCellPosition mc_position = P.get_micro_cell_position_from_cell_index(ic);
-						Direction m2 = Right;
+						BoundedSpiral mc_spiral(P.get_micro_cell_position_from_cell_index(ic), P.total_microcells_wide_, P.total_microcells_high_);
 						if (Hosts[i].PlaceLinks[tp] < 0) //added this so that if any hosts have already be assigned due to their household membership, they will not be reassigned
 						{
 							const uint16_t host_country = Mcells[Hosts[i].mcell].country;
-							while (((k < nn) || (l < 4)) && (l < P.total_microcells_wide_))
+							while (k < nn)
 							{
-								if (P.is_in_bounds(mc_position))
+								ic = mc_spiral.to_array_index();
+								if (mcell_country[ic] != host_country) { mc_spiral.next_valid(); continue; }
+								for (cnt = 0; cnt < Mcells[ic].np[tp]; cnt++)
 								{
-									ic = P.get_micro_cell_index_from_position(mc_position);
-									if (mcell_country[ic] == host_country)
+									if (Mcells[ic].places[tp][cnt] >= P.Nplace[tp]) fprintf(stderr, "#%i %i %i  ", tp, ic, cnt);
+									t = dist2_raw(Households[Hosts[i].hh].loc_x, Households[Hosts[i].hh].loc_y,
+										Places[tp][Mcells[ic].places[tp][cnt]].loc_x, Places[tp][Mcells[ic].places[tp][cnt]].loc_y);
+									s = numKernel(t);
+									if (tp < P.nsp)
 									{
-										for (cnt = 0; cnt < Mcells[ic].np[tp]; cnt++)
+										t = ((double)Places[tp][Mcells[ic].places[tp][cnt]].treat_end_time);
+										if (HOST_AGE_YEAR(i) < P.PlaceTypeMaxAgeRead[tp])
 										{
-											if (Mcells[ic].places[tp][cnt] >= P.Nplace[tp]) fprintf(stderr, "#%i %i %i  ", tp, ic, cnt);
-											t = dist2_raw(Households[Hosts[i].hh].loc_x, Households[Hosts[i].hh].loc_y,
-												Places[tp][Mcells[ic].places[tp][cnt]].loc_x, Places[tp][Mcells[ic].places[tp][cnt]].loc_y);
-											s = numKernel(t);
-											if (tp < P.nsp)
+											if ((t > 0) && (Places[tp][Mcells[ic].places[tp][cnt]].AvailByAge[HOST_AGE_YEAR(i)] > 0))
+												s *= t;
+											else
+												s = 0;
+										}
+										else if (t > 0)
+											s *= t;
+									}
+									k2 = 0;
+									j2 = 0;
+									t = 1e10;
+									if (s > 0)
+									{
+										if (k < nn)
+										{
+											NearestPlaces[tn][k] = Mcells[ic].places[tp][cnt];
+											NearestPlacesProb[tn][k] = s;
+											k++;
+										}
+										else
+										{
+											for (i2 = 0; i2 < nn; i2++)
 											{
-												t = ((double)Places[tp][Mcells[ic].places[tp][cnt]].treat_end_time);
-												if (HOST_AGE_YEAR(i) < P.PlaceTypeMaxAgeRead[tp])
+												if (NearestPlacesProb[tn][i2] < t)
 												{
-													if ((t > 0) && (Places[tp][Mcells[ic].places[tp][cnt]].AvailByAge[HOST_AGE_YEAR(i)] > 0))
-														s *= t;
-													else
-														s = 0;
+													t = NearestPlacesProb[tn][i2]; j2 = i2;
 												}
-												else if (t > 0)
-													s *= t;
 											}
-											k2 = 0;
-											j2 = 0;
-											t = 1e10;
-											if (s > 0)
+											if (s > t)
 											{
 												if (k < nn)
 												{
@@ -2184,14 +2197,7 @@ void AssignPeopleToPlaces()
 										}
 									}
 								}
-								mc_position += m2;
-								f2 = (f2 + 1) % l;
-								if (f2 == 0)
-								{
-									m2 = rotate_left(m2);
-									m = (m + 1) % 2;
-									if (m == 0) l++;
-								}
+								mc_spiral.next_valid();
 							}
 
 							s = 0;
