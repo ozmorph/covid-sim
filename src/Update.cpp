@@ -26,44 +26,41 @@ void InfectiousToDeath(int cellIndex);
 void DoImmune(int ai)
 {
 	// This transfers a person straight from susceptible to immune. Used to start a run with a partially immune population.
-	Person* a;
-	int c;
 	int x, y;
 
-	a = Hosts + ai;
-	if (a->inf == InfStat_Susceptible)
+	auto& a = *(Hosts + ai);
+	if (a.inf == InfStat_Susceptible)
 	{
-		c = a->pcell;
-		a->inf = InfStat_ImmuneAtStart;
+		a.inf = InfStat_ImmuneAtStart;
 
-		SusceptibleToRecovered(c);
+		SusceptibleToRecovered(a.pcell);
+		auto& cell = Cells[a.pcell];
 
-		if (a->listpos < Cells[c].S)
+		if (a.listpos < cell.S)
 		{
-			Cells[c].susceptible[a->listpos] = Cells[c].susceptible[Cells[c].S];
-			Hosts[Cells[c].susceptible[a->listpos]].listpos = a->listpos;
+			cell.susceptible[a.listpos] = cell.susceptible[cell.S];
+			Hosts[cell.susceptible[a.listpos]].listpos = a.listpos;
 		}
-		if (Cells[c].L > 0)
+		if (cell.L > 0)
 		{
-			Cells[c].susceptible[Cells[c].S] = Cells[c].susceptible[Cells[c].S + Cells[c].L];
-			Hosts[Cells[c].susceptible[Cells[c].S]].listpos = Cells[c].S;
+			cell.susceptible[cell.S] = cell.susceptible[cell.S + cell.L];
+			Hosts[cell.susceptible[cell.S]].listpos = cell.S;
 		}
-		if (Cells[c].I > 0)
+		if (cell.I > 0)
 		{
-			Cells[c].susceptible[Cells[c].S + Cells[c].L] = Cells[c].susceptible[Cells[c].S + Cells[c].L + Cells[c].I];
-			Hosts[Cells[c].susceptible[Cells[c].S + Cells[c].L]].listpos = Cells[c].S + Cells[c].L;
+			cell.susceptible[cell.S + cell.L] = cell.susceptible[cell.S + cell.L + cell.I];
+			Hosts[cell.susceptible[cell.S + cell.L]].listpos = cell.S + cell.L;
 		}
-		if (a->listpos < Cells[c].S + Cells[c].L + Cells[c].I)
+		if (a.listpos < cell.S + cell.L + cell.I)
 		{
-			Cells[c].susceptible[Cells[c].S + Cells[c].L + Cells[c].I] = ai;
-			a->listpos = Cells[c].S + Cells[c].L + Cells[c].I;
+			cell.susceptible[cell.S + cell.L + cell.I] = ai;
+			a.listpos = cell.S + cell.L + cell.I;
 		}
-		
 
 		if (P.OutputBitmap)
 		{
-			x = ((int)(Households[a->hh].loc.x * P.scale.x)) - P.bmin.x;
-			y = ((int)(Households[a->hh].loc.y * P.scale.y)) - P.bmin.y;
+			x = ((int)(Households[a.hh].loc.x * P.scale.x)) - P.bmin.x;
+			y = ((int)(Households[a.hh].loc.y * P.scale.y)) - P.bmin.y;
 			if ((x >= 0) && (x < P.b.width) && (y >= 0) && (y < P.b.height))
 			{
 				unsigned j = y * bmh->width + x;
