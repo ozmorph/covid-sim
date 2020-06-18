@@ -951,31 +951,31 @@ void DoFalseCase(int ai, double t, unsigned short int ts, int tn)
 void DoRecover(int ai, int tn, int run)
 {
 	int i, j, x, y;
-	Person* a;
 
-	a = Hosts + ai;
-	if (a->inf == InfStat_InfectiousAsymptomaticNotCase || a->inf == InfStat_Case)
+	auto& person = *(Hosts + ai);
+	if (person.inf == InfStat_InfectiousAsymptomaticNotCase || person.inf == InfStat_Case)
 	{
-		i = a->listpos;
-		InfectiousToRecovered(a->pcell);
-		j = Cells[a->pcell].S + Cells[a->pcell].L + Cells[a->pcell].I;
-		if (i < Cells[a->pcell].S + Cells[a->pcell].L + Cells[a->pcell].I)
+		i = person.listpos;
+		InfectiousToRecovered(person.pcell);
+		auto& cell = Cells[person.pcell];
+		j = cell.S + cell.L + cell.I;
+		if (i < cell.S + cell.L + cell.I)
 		{
-			Cells[a->pcell].susceptible[i] = Cells[a->pcell].susceptible[j];
-			Hosts[Cells[a->pcell].susceptible[i]].listpos = i;
-			a->listpos = j;
-			Cells[a->pcell].susceptible[j] = ai;
+			cell.susceptible[i] = cell.susceptible[j];
+			Hosts[cell.susceptible[i]].listpos = i;
+			person.listpos = j;
+			cell.susceptible[j] = ai;
 		}
-		a->inf = (InfStat)(InfStat_Recovered * a->inf / abs(a->inf));
+		person.inf = (InfStat)(InfStat_Recovered * person.inf / abs(person.inf));
 		if (P.DoAdUnits && P.OutputAdUnitAge)
-			StateT[tn].prevInf_age_adunit[HOST_AGE_GROUP(ai)][Mcells[a->mcell].adunit]--;
+			StateT[tn].prevInf_age_adunit[HOST_AGE_GROUP(ai)][Mcells[person.mcell].adunit]--;
 
 		if (P.OutputBitmap)
 		{
 			if ((P.OutputBitmapDetected == 0) || ((P.OutputBitmapDetected == 1) && (Hosts[ai].detected == 1)))
 			{
-				x = ((int)(Households[a->hh].loc.x * P.scale.x)) - P.bmin.x;
-				y = ((int)(Households[a->hh].loc.y * P.scale.y)) - P.bmin.y;
+				x = ((int)(Households[person.hh].loc.x * P.scale.x)) - P.bmin.x;
+				y = ((int)(Households[person.hh].loc.y * P.scale.y)) - P.bmin.y;
 				if ((x >= 0) && (x < P.b.width) && (y >= 0) && (y < P.b.height))
 				{
 					unsigned j = y * bmh->width + x;
@@ -991,41 +991,42 @@ void DoRecover(int ai, int tn, int run)
 		}
 	}
 	//else
-	//fprintf(stderr, "\n ### %i %i  \n", ai, a->inf);
+	//fprintf(stderr, "\n ### %i %i  \n", ai, person.inf);
 }
 
 void DoDeath(int ai, int tn, int run)
 {
 	int i, x, y;
-	Person* a = Hosts + ai;
+	auto& person = *(Hosts + ai);
 
-	if ((a->inf == InfStat_InfectiousAsymptomaticNotCase || a->inf == InfStat_Case))
+	if ((person.inf == InfStat_InfectiousAsymptomaticNotCase || person.inf == InfStat_Case))
 	{
-		a->inf = (InfStat)(InfStat_Dead * a->inf / abs(a->inf));
-		InfectiousToDeath(a->pcell);
-		i = a->listpos;
-		if (i < Cells[a->pcell].S + Cells[a->pcell].L + Cells[a->pcell].I)
+		person.inf = (InfStat)(InfStat_Dead * person.inf / abs(person.inf));
+		InfectiousToDeath(person.pcell);
+		auto& cell = Cells[person.pcell];
+		i = person.listpos;
+		if (i < cell.S + cell.L + cell.I)
 		{
-			Cells[a->pcell].susceptible[a->listpos] = Cells[a->pcell].infected[Cells[a->pcell].I];
-			Hosts[Cells[a->pcell].susceptible[a->listpos]].listpos = i;
-			a->listpos = Cells[a->pcell].S + Cells[a->pcell].L + Cells[a->pcell].I;
-			Cells[a->pcell].susceptible[a->listpos] = ai;
+			cell.susceptible[person.listpos] = cell.infected[cell.I];
+			Hosts[cell.susceptible[person.listpos]].listpos = i;
+			person.listpos = cell.S + cell.L + cell.I;
+			cell.susceptible[person.listpos] = ai;
 		}
 
-		/*		a->listpos=-1; */
+		/*		person.listpos=-1; */
 		StateT[tn].cumDa[HOST_AGE_GROUP(ai)]++;
 
 		if (P.DoAdUnits)
 		{
-			StateT[tn].cumD_adunit[Mcells[a->mcell].adunit]++;
-			if (P.OutputAdUnitAge) StateT[tn].prevInf_age_adunit[HOST_AGE_GROUP(ai)][Mcells[a->mcell].adunit]--;
+			StateT[tn].cumD_adunit[Mcells[person.mcell].adunit]++;
+			if (P.OutputAdUnitAge) StateT[tn].prevInf_age_adunit[HOST_AGE_GROUP(ai)][Mcells[person.mcell].adunit]--;
 		}
 		if (P.OutputBitmap)
 		{
 			if ((P.OutputBitmapDetected == 0) || ((P.OutputBitmapDetected == 1) && (Hosts[ai].detected == 1)))
 			{
-				x = ((int)(Households[a->hh].loc.x * P.scale.x)) - P.bmin.x;
-				y = ((int)(Households[a->hh].loc.y * P.scale.y)) - P.bmin.y;
+				x = ((int)(Households[person.hh].loc.x * P.scale.x)) - P.bmin.x;
+				y = ((int)(Households[person.hh].loc.y * P.scale.y)) - P.bmin.y;
 				if ((x >= 0) && (x < P.b.width) && (y >= 0) && (y < P.b.height))
 				{
 					unsigned j = y * bmh->width + x;
@@ -1052,18 +1053,23 @@ void DoTreatCase(int ai, unsigned short int ts, int tn)
 		if (!HOST_TO_BE_TREATED(ai))
 #endif
 		{
-			Hosts[ai].treat_start_time = ts + ((unsigned short int) (P.TimeStepsPerDay * P.TreatDelayMean));
-			Hosts[ai].treat_stop_time = ts + ((unsigned short int) (P.TimeStepsPerDay * (P.TreatDelayMean + P.TreatCaseCourseLength)));
-			StateT[tn].cumT++;
-			if ((abs(Hosts[ai].inf) > InfStat_Susceptible) && (Hosts[ai].inf != InfStat_Dead_WasAsymp)) Cells[Hosts[ai].pcell].cumTC++;
-			StateT[tn].cumT_keyworker[Hosts[ai].keyworker]++;
-			if ((++Hosts[ai].num_treats) < 2) StateT[tn].cumUT++;
-			Cells[Hosts[ai].pcell].tot_treat++;
-			if (P.DoAdUnits) StateT[tn].cumT_adunit[Mcells[Hosts[ai].mcell].adunit]++;
+			auto& host = Hosts[ai];
+			auto& cell = Cells[host.pcell];
+			auto& adunit = Mcells[host.mcell].adunit;
+			auto& state = StateT[tn];
+
+			host.treat_start_time = ts + ((unsigned short int) (P.TimeStepsPerDay * P.TreatDelayMean));
+			host.treat_stop_time = ts + ((unsigned short int) (P.TimeStepsPerDay * (P.TreatDelayMean + P.TreatCaseCourseLength)));
+			state.cumT++;
+			if ((abs(host.inf) > InfStat_Susceptible) && (host.inf != InfStat_Dead_WasAsymp)) cell.cumTC++;
+			state.cumT_keyworker[host.keyworker]++;
+			if ((++host.num_treats) < 2) state.cumUT++;
+			cell.tot_treat++;
+			if (P.DoAdUnits) state.cumT_adunit[adunit]++;
 			if (P.OutputBitmap)
 			{
-				x = ((int)(Households[Hosts[ai].hh].loc.x * P.scale.x)) - P.bmin.x;
-				y = ((int)(Households[Hosts[ai].hh].loc.y * P.scale.y)) - P.bmin.y;
+				x = ((int)(Households[host.hh].loc.x * P.scale.x)) - P.bmin.x;
+				y = ((int)(Households[host.hh].loc.y * P.scale.y)) - P.bmin.y;
 				if ((x >= 0) && (x < P.b.width) && (y >= 0) && (y < P.b.height))
 				{
 					unsigned j = y * bmh->width + x;
@@ -1085,18 +1091,23 @@ void DoProph(int ai, unsigned short int ts, int tn)
 
 	if (State.cumT < P.TreatMaxCourses)
 	{
-		Hosts[ai].treat_start_time = ts + ((unsigned short int) (P.TimeStepsPerDay * P.TreatDelayMean));
-		Hosts[ai].treat_stop_time = ts + ((unsigned short int) (P.TimeStepsPerDay * (P.TreatDelayMean + P.TreatProphCourseLength)));
-		StateT[tn].cumT++;
-		StateT[tn].cumT_keyworker[Hosts[ai].keyworker]++;
-		if ((++Hosts[ai].num_treats) < 2) StateT[tn].cumUT++;
-		if (P.DoAdUnits)	StateT[tn].cumT_adunit[Mcells[Hosts[ai].mcell].adunit]++;
+		auto& host = Hosts[ai];
+		auto& cell = Cells[host.pcell];
+		auto& adunit = Mcells[host.mcell].adunit;
+		auto& state = StateT[tn];
+
+		host.treat_start_time = ts + ((unsigned short int) (P.TimeStepsPerDay * P.TreatDelayMean));
+		host.treat_stop_time = ts + ((unsigned short int) (P.TimeStepsPerDay * (P.TreatDelayMean + P.TreatProphCourseLength)));
+		state.cumT++;
+		state.cumT_keyworker[host.keyworker]++;
+		if ((++host.num_treats) < 2) state.cumUT++;
+		if (P.DoAdUnits) state.cumT_adunit[adunit]++;
 #pragma omp critical (tot_treat)
-		Cells[Hosts[ai].pcell].tot_treat++;
+		cell.tot_treat++;
 		if (P.OutputBitmap)
 		{
-			x = ((int)(Households[Hosts[ai].hh].loc.x * P.scale.x)) - P.bmin.x;
-			y = ((int)(Households[Hosts[ai].hh].loc.y * P.scale.y)) - P.bmin.y;
+			x = ((int)(Households[host.hh].loc.x * P.scale.x)) - P.bmin.x;
+			y = ((int)(Households[host.hh].loc.y * P.scale.y)) - P.bmin.y;
 			if ((x >= 0) && (x < P.b.width) && (y >= 0) && (y < P.b.height))
 			{
 				unsigned j = y * bmh->width + x;
@@ -1116,18 +1127,23 @@ void DoProphNoDelay(int ai, unsigned short int ts, int tn, int nc)
 
 	if (State.cumT < P.TreatMaxCourses)
 	{
-		Hosts[ai].treat_start_time = ts;
-		Hosts[ai].treat_stop_time = ts + ((unsigned short int) (P.TimeStepsPerDay * P.TreatProphCourseLength * nc));
-		StateT[tn].cumT += nc;
-		StateT[tn].cumT_keyworker[Hosts[ai].keyworker] += nc;
-		if ((++Hosts[ai].num_treats) < 2) StateT[tn].cumUT++;
-		if (P.DoAdUnits) StateT[tn].cumT_adunit[Mcells[Hosts[ai].mcell].adunit] += nc;
+		auto& host = Hosts[ai];
+		auto& cell = Cells[host.pcell];
+		auto& adunit = Mcells[host.mcell].adunit;
+		auto& state = StateT[tn];
+
+		host.treat_start_time = ts;
+		host.treat_stop_time = ts + ((unsigned short int) (P.TimeStepsPerDay * P.TreatProphCourseLength * nc));
+		state.cumT += nc;
+		state.cumT_keyworker[host.keyworker] += nc;
+		if ((++host.num_treats) < 2) state.cumUT++;
+		if (P.DoAdUnits) state.cumT_adunit[adunit] += nc;
 #pragma omp critical (tot_treat)
-		Cells[Hosts[ai].pcell].tot_treat++;
+		cell.tot_treat++;
 		if (P.OutputBitmap)
 		{
-			x = ((int)(Households[Hosts[ai].hh].loc.x * P.scale.x)) - P.bmin.x;
-			y = ((int)(Households[Hosts[ai].hh].loc.y * P.scale.y)) - P.bmin.y;
+			x = ((int)(Households[host.hh].loc.x * P.scale.x)) - P.bmin.x;
+			y = ((int)(Households[host.hh].loc.y * P.scale.y)) - P.bmin.y;
 			if ((x >= 0) && (x < P.b.width) && (y >= 0) && (y < P.b.height))
 			{
 				unsigned j = y * bmh->width + x;
@@ -1151,6 +1167,8 @@ void DoPlaceClose(int i, int j, unsigned short int ts, int tn, int DoAnyway)
 	unsigned short trig;
 	unsigned short int t_start, t_stop;
 	unsigned short int t_old, t_new;
+	auto& place = Places[i][j];
+	auto& adunit = AdUnits[Mcells[place.mcell].adunit];
 
 	f2 = 0;
 	/*	if((j<0)||(j>=P.Nplace[i]))
@@ -1162,8 +1180,7 @@ void DoPlaceClose(int i, int j, unsigned short int ts, int tn, int DoAnyway)
 	t_start = ts + ((unsigned short int) (P.TimeStepsPerDay * P.PlaceCloseDelayMean));
 	if (P.DoInterventionDelaysByAdUnit)
 	{
-		k = Mcells[Places[i][j].mcell].adunit;
-		t_stop = ts + ((unsigned short int) (P.TimeStepsPerDay * (P.PlaceCloseDelayMean + AdUnits[k].PlaceCloseDuration)));
+		t_stop = ts + ((unsigned short int) (P.TimeStepsPerDay * (P.PlaceCloseDelayMean + adunit.PlaceCloseDuration)));
 	}
 	else
 	{
@@ -1174,64 +1191,62 @@ void DoPlaceClose(int i, int j, unsigned short int ts, int tn, int DoAnyway)
 		//// close_start_time initialized to USHRT_MAX - 1.
 		//// close_end_time initialized to zero in InitModel (so will pass this check on at least first call of this function).
 
-		if (Places[i][j].close_end_time < t_stop)
+		if (place.close_end_time < t_stop)
 		{
-			if ((!DoAnyway) && (Places[i][j].control_trig < USHRT_MAX - 2))
+			if ((!DoAnyway) && (place.control_trig < USHRT_MAX - 2))
 			{
-				Places[i][j].control_trig++;
+				place.control_trig++;
 				if (P.AbsenteeismPlaceClosure)
 				{
-					t_old = Places[i][j].AbsentLastUpdateTime;
+					t_old = place.AbsentLastUpdateTime;
 					if (t_new >= t_old + P.MaxAbsentTime)
-						for (l = 0; l < P.MaxAbsentTime; l++) Places[i][j].Absent[l] = 0;
+						for (l = 0; l < P.MaxAbsentTime; l++) place.Absent[l] = 0;
 					else
-						for (l = t_old; l < t_new; l++) Places[i][j].Absent[l % P.MaxAbsentTime] = 0;
-					for (l = t_new; l < t_new + P.usCaseAbsenteeismDuration / P.TimeStepsPerDay; l++) Places[i][j].Absent[l % P.MaxAbsentTime]++;
-					trig = Places[i][j].Absent[t_new % P.MaxAbsentTime];
-					Places[i][j].AbsentLastUpdateTime = t_new;
+						for (l = t_old; l < t_new; l++)place.Absent[l % P.MaxAbsentTime] = 0;
+					for (l = t_new; l < t_new + P.usCaseAbsenteeismDuration / P.TimeStepsPerDay; l++) place.Absent[l % P.MaxAbsentTime]++;
+					trig = place.Absent[t_new % P.MaxAbsentTime];
+					place.AbsentLastUpdateTime = t_new;
 					if ((P.PlaceCloseByAdminUnit) && (P.PlaceCloseAdunitPlaceTypes[i] > 0)
-						&& (((double)trig) / ((double)Places[i][j].n) > P.PlaceCloseCasePropThresh))
+						&& (((double)trig) / ((double)place.n) > P.PlaceCloseCasePropThresh))
 					{
-						//fprintf(stderr,"** %i %i %i %i %lg ## ",i,j,(int) Places[i][j].control_trig, (int) Places[i][j].n,P.PlaceCloseCasePropThresh);
-						k = Mcells[Places[i][j].mcell].adunit;
-						if (AdUnits[k].place_close_trig < USHRT_MAX - 1) AdUnits[k].place_close_trig++;
+						//fprintf(stderr,"** %i %i %i %i %lg ## ",i,j,(int) place.control_trig, (int) place.n,P.PlaceCloseCasePropThresh);
+						if (adunit.place_close_trig < USHRT_MAX - 1) adunit.place_close_trig++;
 					}
 				}
 				else
 				{
-					trig = Places[i][j].control_trig;
+					trig = place.control_trig;
 					if ((P.PlaceCloseByAdminUnit) && (P.PlaceCloseAdunitPlaceTypes[i] > 0)
-						&& (((double)Places[i][j].control_trig) / ((double)Places[i][j].n) > P.PlaceCloseCasePropThresh))
+						&& (((double)place.control_trig) / ((double)place.n) > P.PlaceCloseCasePropThresh))
 					{
-						//fprintf(stderr,"** %i %i %i %i %lg ## ",i,j,(int) Places[i][j].control_trig, (int) Places[i][j].n,P.PlaceCloseCasePropThresh);
-						k = Mcells[Places[i][j].mcell].adunit;
-						if (AdUnits[k].place_close_trig < USHRT_MAX - 1) AdUnits[k].place_close_trig++;
+						//fprintf(stderr,"** %i %i %i %i %lg ## ",i,j,(int) place.control_trig, (int) place.n,P.PlaceCloseCasePropThresh);
+						if (adunit.place_close_trig < USHRT_MAX - 1) adunit.place_close_trig++;
 					}
 				}
 			}
-			if (Places[i][j].control_trig < USHRT_MAX - 1) //// control_trig initialized to zero so this check will pass at least once
+			if (place.control_trig < USHRT_MAX - 1) //// control_trig initialized to zero so this check will pass at least once
 			{
 				if (P.PlaceCloseFracIncTrig > 0)
-					k = (((double)trig) / ((double)Places[i][j].n) > P.PlaceCloseFracIncTrig);
+					k = (((double)trig) / ((double)place.n) > P.PlaceCloseFracIncTrig);
 				else
 					k = (((int)trig) >= P.PlaceCloseIncTrig);
 				if (((!P.PlaceCloseByAdminUnit) && (k)) || (DoAnyway))
 				{
 					if (P.DoPlaceCloseOnceOnly)
-						Places[i][j].control_trig = USHRT_MAX - 1;  //// Places only close once, and so this code block would not be entered again.
+						place.control_trig = USHRT_MAX - 1;  //// Places only close once, and so this code block would not be entered again.
 					else
-						Places[i][j].control_trig = 0;				//// otherwise reset the trigger.
+						place.control_trig = 0;				//// otherwise reset the trigger.
 
 					//// set close_start_time and close_end_time
 
-					if (Places[i][j].ProbClose >= P.PlaceCloseEffect[i]) //// if proportion of places of type i remaining open is 0 or if place is closed with prob 1 - PlaceCloseEffect[i]...
+					if (place.ProbClose >= P.PlaceCloseEffect[i]) //// if proportion of places of type i remaining open is 0 or if place is closed with prob 1 - PlaceCloseEffect[i]...
 					{
-						if (Places[i][j].close_start_time > t_start) Places[i][j].close_start_time = t_start;
-						Places[i][j].close_end_time = t_stop;
+						if (place.close_start_time > t_start) place.close_start_time = t_start;
+						place.close_end_time = t_stop;
 						f2 = 1; /// /set flag to true so next part of function used.
 					}
 					else
-						Places[i][j].close_start_time = Places[i][j].close_end_time = t_stop; //// ... otherwise set start and end of closure to be the same, which will cause macro PLACE_CLOSED to always return false.
+						place.close_start_time = place.close_end_time = t_stop; //// ... otherwise set start and end of closure to be the same, which will cause macro PLACE_CLOSED to always return false.
 				}
 			}
 		}
@@ -1240,9 +1255,9 @@ void DoPlaceClose(int i, int j, unsigned short int ts, int tn, int DoAnyway)
 	if (f2)
 	{
 		if (P.DoRealSymptWithdrawal)
-			for (k = 0; k < Places[i][j].n; k++) //// loop over all people in place.
+			for (k = 0; k < place.n; k++) //// loop over all people in place.
 			{
-				ai = Places[i][j].members[k];
+				ai = place.members[k];
 				if (((P.PlaceClosePropAttending[i] == 0) || (Hosts[ai].ProbAbsent >= P.PlaceClosePropAttending[i])))
 				{
 					if ((!HOST_ABSENT(ai)) && (!HOST_QUARANTINED(ai)) && (HOST_AGE_YEAR(ai) < P.CaseAbsentChildAgeCutoff)) //// if person is a child and neither absent nor quarantined
@@ -1289,18 +1304,21 @@ void DoPlaceOpen(int i, int j, unsigned short int ts, int tn)
 
 #pragma omp critical (openplace)
 	{
-		if (ts < Places[i][j].close_end_time)
+		auto& place = Places[i][j];
+		if (ts < place.close_end_time)
 		{
 			if (P.DoRealSymptWithdrawal)
-				for (k = 0; k < Places[i][j].n; k++)
+				for (k = 0; k < place.n; k++)
 				{
-					ai = Places[i][j].members[k];
-					if (Hosts[ai].absent_stop_time == Places[i][j].close_end_time) Hosts[ai].absent_stop_time = ts;
-					if (Hosts[ai].ProbCare < P.CaseAbsentChildPropAdultCarers) //// if child needs adult supervision
+					const auto ai = place.members[k];
+					auto& person = Hosts[ai];
+					if (person.absent_stop_time == place.close_end_time) person.absent_stop_time = ts;
+					if (person.ProbCare < P.CaseAbsentChildPropAdultCarers) //// if child needs adult supervision
 					{
 						if ((HOST_AGE_YEAR(ai) < P.CaseAbsentChildAgeCutoff) && (!HOST_QUARANTINED(ai)))
 						{
-							j1 = Households[Hosts[ai].hh].FirstPerson; j2 = j1 + Households[Hosts[ai].hh].nh;
+							j1 = Households[person.hh].FirstPerson;
+							j2 = j1 + Households[person.hh].nh;
 							f = 0;
 							for (l = j1; (l < j2) && (!f); l++)
 								f = ((abs(Hosts[l].inf) != InfStat_Dead) && (HOST_AGE_YEAR(l) >= P.CaseAbsentChildAgeCutoff) && ((Hosts[l].PlaceLinks[P.PlaceTypeNoAirNum - 1] < 0) || (HOST_QUARANTINED(l))));
@@ -1309,13 +1327,13 @@ void DoPlaceOpen(int i, int j, unsigned short int ts, int tn)
 								for (l = j1; (l < j2) && (!f); l++)
 									if ((HOST_AGE_YEAR(l) >= P.CaseAbsentChildAgeCutoff) && (abs(Hosts[l].inf) != InfStat_Dead) && (HOST_ABSENT(l)))
 									{
-										if (Hosts[l].absent_stop_time == Places[i][j].close_end_time) Hosts[l].absent_stop_time = ts;
+										if (Hosts[l].absent_stop_time == place.close_end_time) Hosts[l].absent_stop_time = ts;
 									}
 							}
 						}
 					}
 				}
-			Places[i][j].close_end_time = ts;
+			place.close_end_time = ts;
 		}
 	}
 }
