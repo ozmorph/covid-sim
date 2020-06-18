@@ -327,7 +327,7 @@ void InfectSweep(double t, int run) //added run number as argument in order to r
 			s5 = 0; ///// spatial infectiousness summed over all infectious people in loop below
 			
 			//// Loop over array of indices of infectious people c->I in this cell. Loop 1a)
-			for (int j = 0; j < cell.I; j++) 
+			for (int j = 0; j < cell.I; j++)
 			{
 				//// get person index ci of j'th infected person in this cell
 				ci = cell.infected[j];
@@ -354,14 +354,14 @@ void InfectSweep(double t, int run) //added run number as argument in order to r
 				if (hbeta > 0)
 				{
 					// For selected host si's household, 
-					auto const& house = Households[si.hh];
+					auto const& infected_house = Households[si.hh];
 					
 					// if the number of hosts (nh) in that Household is greater than 1
 					// AND the selected host is not travelling
-					if ((house.nh > 1) && (!si.Travelling))
+					if ((infected_house.nh > 1) && (!si.Travelling))
 					{
-						int l = house.FirstPerson;
-						int m = l + house.nh;
+						int l = infected_house.FirstPerson;
+						int m = l + infected_house.nh;
 						// calculate infectiousness of selected household (s3)
 						// using the CalcHouseInf function on the selected cell and timestamp at start of current day
 						// then scaling by hbeta
