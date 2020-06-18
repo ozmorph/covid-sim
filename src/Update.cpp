@@ -1342,8 +1342,9 @@ void DoVacc(int ai, unsigned short int ts)
 {
 	int x, y;
 	bool cumV_OK = false;
+	auto& person = Hosts[ai];
 
-	if ((HOST_TO_BE_VACCED(ai)) || (Hosts[ai].inf < InfStat_InfectiousAlmostSymptomatic) || (Hosts[ai].inf >= InfStat_Dead_WasAsymp))
+	if ((HOST_TO_BE_VACCED(ai)) || (person.inf < InfStat_InfectiousAlmostSymptomatic) || (person.inf >= InfStat_Dead_WasAsymp))
 		return;
 #pragma omp critical (state_cumV)
 	if (State.cumV < P.VaccMaxCourses)
@@ -1353,7 +1354,7 @@ void DoVacc(int ai, unsigned short int ts)
 	}
 	if (cumV_OK)
 	{
-		Hosts[ai].vacc_start_time = ts + ((unsigned short int) (P.TimeStepsPerDay * P.VaccDelayMean));
+		person.vacc_start_time = ts + ((unsigned short int) (P.TimeStepsPerDay * P.VaccDelayMean));
 
 		if (P.VaccDosePerDay >= 0)
 		{
@@ -1361,11 +1362,11 @@ void DoVacc(int ai, unsigned short int ts)
 			State.cumV_daily++;
 		}
 #pragma omp critical (tot_vacc)
-		Cells[Hosts[ai].pcell].tot_vacc++;
+		Cells[person.pcell].tot_vacc++;
 		if (P.OutputBitmap)
 		{
-			x = ((int)(Households[Hosts[ai].hh].loc.x * P.scale.x)) - P.bmin.x;
-			y = ((int)(Households[Hosts[ai].hh].loc.y * P.scale.y)) - P.bmin.y;
+			x = ((int)(Households[person.hh].loc.x * P.scale.x)) - P.bmin.x;
+			y = ((int)(Households[person.hh].loc.y * P.scale.y)) - P.bmin.y;
 			if ((x >= 0) && (x < P.b.width) && (y >= 0) && (y < P.b.height))
 			{
 				unsigned j = y * bmh->width + x;
@@ -1383,8 +1384,9 @@ void DoVaccNoDelay(int ai, unsigned short int ts)
 {
 	int x, y;
 	bool cumVG_OK = false;
+	auto& person = Hosts[ai];
 
-	if ((HOST_TO_BE_VACCED(ai)) || (Hosts[ai].inf < InfStat_InfectiousAlmostSymptomatic) || (Hosts[ai].inf >= InfStat_Dead_WasAsymp))
+	if ((HOST_TO_BE_VACCED(ai)) || (person.inf < InfStat_InfectiousAlmostSymptomatic) || (person.inf >= InfStat_Dead_WasAsymp))
 		return;
 #pragma omp critical (state_cumVG)
 	if (State.cumVG < P.VaccMaxCourses)
@@ -1394,18 +1396,18 @@ void DoVaccNoDelay(int ai, unsigned short int ts)
 	}
 	if (cumVG_OK)
 	{
-		Hosts[ai].vacc_start_time = ts;
+		person.vacc_start_time = ts;
 		if (P.VaccDosePerDay >= 0)
 		{
 #pragma omp critical (state_cumV_daily)
 			State.cumVG_daily++;
 		}
 #pragma omp critical (tot_vacc)
-		Cells[Hosts[ai].pcell].tot_vacc++;
+		Cells[person.pcell].tot_vacc++;
 		if (P.OutputBitmap)
 		{
-			x = ((int)(Households[Hosts[ai].hh].loc.x * P.scale.x)) - P.bmin.x;
-			y = ((int)(Households[Hosts[ai].hh].loc.y * P.scale.y)) - P.bmin.y;
+			x = ((int)(Households[person.hh].loc.x * P.scale.x)) - P.bmin.x;
+			y = ((int)(Households[person.hh].loc.y * P.scale.y)) - P.bmin.y;
 			if ((x >= 0) && (x < P.b.width) && (y >= 0) && (y < P.b.height))
 			{
 				unsigned j = y * bmh->width + x;
@@ -1451,37 +1453,41 @@ unsigned short int ChooseFromICDF(double *ICDF, double Mean, int tn)
 
 void SusceptibleToRecovered(int cellIndex)
 {
-	Cells[cellIndex].S--;
-	Cells[cellIndex].R++;
-	Cells[cellIndex].latent--;
-	Cells[cellIndex].infected--;
+	auto& cell = Cells[cellIndex];
+	cell.S--;
+	cell.R++;
+	cell.latent--;
+	cell.infected--;
 }
 
 void SusceptibleToLatent(int cellIndex)
 {
-	Cells[cellIndex].S--; 
-	Cells[cellIndex].L++;			//// number of latently infected people increases by one.
-	Cells[cellIndex].latent--;		//// pointer to latent in that cell decreased.
+	auto& cell = Cells[cellIndex];
+	cell.S--; 
+	cell.L++;			//// number of latently infected people increases by one.
+	cell.latent--;		//// pointer to latent in that cell decreased.
 }
-
 
 void LatentToInfectious(int cellIndex)
 {
-	Cells[cellIndex].L--;		//// one fewer person latently infected.
-	Cells[cellIndex].I++;		//// one more infectious person.
-	Cells[cellIndex].infected--; //// first infected person is now one index earlier in array.
+	auto& cell = Cells[cellIndex];
+	cell.L--;		//// one fewer person latently infected.
+	cell.I++;		//// one more infectious person.
+	cell.infected--; //// first infected person is now one index earlier in array.
 }
 
 void InfectiousToRecovered(int cellIndex)
 {
-	Cells[cellIndex].I--; //// one less infectious person
-	Cells[cellIndex].R++; //// one more recovered person
+	auto& cell = Cells[cellIndex];
+	cell.I--; //// one less infectious person
+	cell.R++; //// one more recovered person
 }
 
 
 void InfectiousToDeath(int cellIndex)
 {
-	Cells[cellIndex].I--; //// one less infectious person
-	Cells[cellIndex].D++; //// one more dead person
+	auto& cell = Cells[cellIndex];
+	cell.I--; //// one less infectious person
+	cell.D++; //// one more dead person
 }
 
