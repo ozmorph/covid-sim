@@ -187,52 +187,48 @@ void RecordEvent(double t, int ai, int run, int type, int tn) //added int as arg
 	 *
 	 * Author: ggilani, Date: 10/10/2014
 	 */
-	 //Declare int to store infector's index
-	int bi;
-
-	bi = Hosts[ai].infector;
-
 	//Save information to event
 #pragma omp critical (inf_event)
 	if (nEvents < P.MaxInfEvents)
 	{
-		InfEventLog[nEvents].run = run;
-		InfEventLog[nEvents].type = type;
-		InfEventLog[nEvents].t = t;
-		InfEventLog[nEvents].infectee_ind = ai;
-		InfEventLog[nEvents].infectee_adunit = Mcells[Hosts[ai].mcell].adunit;
-		InfEventLog[nEvents].infectee_x = Households[Hosts[ai].hh].loc.x + P.SpatialBoundingBox[0];
-		InfEventLog[nEvents].infectee_y = Households[Hosts[ai].hh].loc.y + P.SpatialBoundingBox[1];
-		InfEventLog[nEvents].listpos = Hosts[ai].listpos;
-		InfEventLog[nEvents].infectee_cell = Hosts[ai].pcell;
-		InfEventLog[nEvents].thread = tn;
+		auto const& host = Hosts[ai];
+		auto& log = InfEventLog[nEvents];
+		log.run = run;
+		log.type = type;
+		log.t = t;
+		log.infectee_ind = ai;
+		log.infectee_adunit = Mcells[host.mcell].adunit;
+		log.infectee_x = Households[host.hh].loc.x + P.SpatialBoundingBox[0];
+		log.infectee_y = Households[host.hh].loc.y + P.SpatialBoundingBox[1];
+		log.listpos = host.listpos;
+		log.infectee_cell = host.pcell;
+		log.thread = tn;
 		if (type == 0) //infection event - record time of onset of infector and infector
 		{
-			InfEventLog[nEvents].infector_ind = bi;
-			if (bi < 0)
+			auto const& host_infector = Hosts[host.infector];
+			log.infector_ind = host.infector;
+			if (host.infector < 0)
 			{
-				InfEventLog[nEvents].t_infector = -1;
-				InfEventLog[nEvents].infector_cell = -1;
+				log.t_infector = -1;
+				log.infector_cell = -1;
 			}
 			else
 			{
-				InfEventLog[nEvents].t_infector = (int)(Hosts[bi].infection_time / P.TimeStepsPerDay);
-				InfEventLog[nEvents].infector_cell = Hosts[bi].pcell;
+				log.t_infector = (int)(host_infector.infection_time / P.TimeStepsPerDay);
+				log.infector_cell = host_infector.pcell;
 			}
 		}
 		else if (type == 1) //onset event - record infectee's onset time
 		{
-			InfEventLog[nEvents].t_infector = (int)(Hosts[ai].infection_time / P.TimeStepsPerDay);
+			log.t_infector = (int)(host.infection_time / P.TimeStepsPerDay);
 		}
 		else if ((type == 2) || (type == 3)) //recovery or death event - record infectee's onset time
 		{
-			InfEventLog[nEvents].t_infector = (int)(Hosts[ai].latent_time / P.TimeStepsPerDay);
+			log.t_infector = (int)(host.latent_time / P.TimeStepsPerDay);
 		}
-
 		//increment the index of the infection event
 		nEvents++;
 	}
-
 }
 
 void DoMild(int ai, int tn)
@@ -561,7 +557,7 @@ void DoIncub(int ai, unsigned short int ts, int tn, int run)
 		//// update pointers
 		LatentToInfectious(person.pcell);
 		auto& cell = Cells[person.pcell];
-		
+
 		if (cell.L > 0)
 		{
 			cell.susceptible[person.listpos] = cell.latent[cell.L]; //// reset pointers.
