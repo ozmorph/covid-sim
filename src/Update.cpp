@@ -342,71 +342,79 @@ void DoRecoveringFromCritical(int ai, int tn)
 	//// DoRecoveringFromCritical assigns people to intermediate state "recovering from critical condition" (and bookkeeps accordingly).
 	if (P.DoSeverity) //// shouldn't need this but best be careful.
 	{
-		Person* a = Hosts + ai;
-		if (a->Severity_Current == Severity_Critical && (!a->to_die)) //// second condition should be unnecessary but leave in for now.
+		auto& person = *(Hosts + ai);
+		if (person.Severity_Current == Severity_Critical && (!person.to_die)) //// second condition should be unnecessary but leave in for now.
 		{
-			a->Severity_Current = Severity_RecoveringFromCritical;
-			StateT[tn].Critical--;
-			StateT[tn].Critical_age[HOST_AGE_GROUP(ai)]--;
-			StateT[tn].CritRecov++;
-			StateT[tn].cumCritRecov++;
-			StateT[tn].CritRecov_age[HOST_AGE_GROUP(ai)]++;
-			StateT[tn].cumCritRecov_age[HOST_AGE_GROUP(ai)]++;
+			person.Severity_Current = Severity_RecoveringFromCritical;
+
+			auto& state = StateT[tn];
+			const auto age_group = HOST_AGE_GROUP(ai);
+			state.Critical--;
+			state.Critical_age[age_group]--;
+			state.CritRecov++;
+			state.cumCritRecov++;
+			state.CritRecov_age[age_group]++;
+			state.cumCritRecov_age[age_group]++;
 			if (P.DoAdUnits)
 			{
-				StateT[tn].Critical_adunit[Mcells[a->mcell].adunit]--;
-				StateT[tn].CritRecov_adunit[Mcells[a->mcell].adunit]++;
-				StateT[tn].cumCritRecov_adunit[Mcells[a->mcell].adunit]++;
+				const auto adunit = Mcells[person.mcell].adunit;
+				state.Critical_adunit[adunit]--;
+				state.CritRecov_adunit[adunit]++;
+				state.cumCritRecov_adunit[adunit]++;
 			}
 		}
 	}
 }
 void DoDeath_FromCriticalorSARIorILI(int ai, int tn)
 {
-	Person* a = Hosts + ai;
+	auto& person = *(Hosts + ai);
 	if (P.DoSeverity)
 	{
-		if (a->Severity_Current == Severity_Critical)
+		const auto adunit = Mcells[person.mcell].adunit;
+		const auto age_group = HOST_AGE_GROUP(ai);
+		auto& state = StateT[tn];
+
+		if (person.Severity_Current == Severity_Critical)
 		{
-			StateT[tn].Critical--;
-			StateT[tn].Critical_age[HOST_AGE_GROUP(ai)]--;
-			StateT[tn].cumDeath_Critical++;
-			StateT[tn].cumDeath_Critical_age[HOST_AGE_GROUP(ai)]++;
+			state.Critical--;
+			state.Critical_age[age_group]--;
+			state.cumDeath_Critical++;
+			state.cumDeath_Critical_age[age_group]++;
 			if (P.DoAdUnits)
 			{
-				StateT[tn].Critical_adunit			[Mcells[a->mcell].adunit]--;
-				StateT[tn].cumDeath_Critical_adunit	[Mcells[a->mcell].adunit]++;
+				state.Critical_adunit			[adunit]--;
+				state.cumDeath_Critical_adunit	[adunit]++;
 			}
 			//// change current status (so that flags work if function called again for same person). Don't move this outside of this if statement, even though it looks like it can be moved safely. It can't.
-			a->Severity_Current = Severity_Dead;
+			person.Severity_Current = Severity_Dead;
 		}
-		else if (a->Severity_Current == Severity_SARI)
+		else if (person.Severity_Current == Severity_SARI)
 		{
-			StateT[tn].SARI--;
-			StateT[tn].SARI_age[HOST_AGE_GROUP(ai)]--;
-			StateT[tn].cumDeath_SARI++;
-			StateT[tn].cumDeath_SARI_age[HOST_AGE_GROUP(ai)]++;
+			state.SARI--;
+			state.SARI_age[age_group]--;
+			state.cumDeath_SARI++;
+			state.cumDeath_SARI_age[age_group]++;
 			if (P.DoAdUnits)
 			{
-				StateT[tn].SARI_adunit			[Mcells[a->mcell].adunit]--;
-				StateT[tn].cumDeath_SARI_adunit	[Mcells[a->mcell].adunit]++;
+				state.SARI_adunit			[adunit]--;
+				state.cumDeath_SARI_adunit	[adunit]++;
 			}
 			//// change current status (so that flags work if function called again for same person). Don't move this outside of this if statement, even though it looks like it can be moved safely. It can't.
-			a->Severity_Current = Severity_Dead;
+			person.Severity_Current = Severity_Dead;
 		}
-		else if (a->Severity_Current == Severity_ILI)
+		else if (person.Severity_Current == Severity_ILI)
 		{
-			StateT[tn].ILI--;
-			StateT[tn].ILI_age[HOST_AGE_GROUP(ai)]--;
-			StateT[tn].cumDeath_ILI++;
-			StateT[tn].cumDeath_ILI_age[HOST_AGE_GROUP(ai)]++;
+			state.ILI--;
+			state.ILI_age[age_group]--;
+			state.cumDeath_ILI++;
+			state.cumDeath_ILI_age[age_group]++;
 			if (P.DoAdUnits)
 			{
-				StateT[tn].ILI_adunit			[Mcells[a->mcell].adunit]--;
-				StateT[tn].cumDeath_ILI_adunit	[Mcells[a->mcell].adunit]++;
+				state.ILI_adunit			[adunit]--;
+				state.cumDeath_ILI_adunit	[adunit]++;
 			}
 			//// change current status (so that flags work if function called again for same person). Don't move this outside of this if statement, even though it looks like it can be moved safely. It can't.
-			a->Severity_Current = Severity_Dead;
+			person.Severity_Current = Severity_Dead;
 		}
 	}
 }
@@ -417,123 +425,125 @@ void DoRecover_FromSeverity(int ai, int tn)
 	//// DoRecoveringFromCritical assigns people to intermediate state "recovering from critical condition" (and bookkeeps accordingly).
 
 	//// moved this from DoRecover
-	Person* a = Hosts + ai;
+	auto& person = *(Hosts + ai);
 
 	if (P.DoSeverity)
-		if (a->inf == InfStat_InfectiousAsymptomaticNotCase || a->inf == InfStat_Case) ///// i.e same condition in DoRecover (make sure you don't recover people twice).
+		if (person.inf == InfStat_InfectiousAsymptomaticNotCase || person.inf == InfStat_Case) ///// i.e same condition in DoRecover (make sure you don't recover people twice).
 		{
-			if (a->Severity_Current == Severity_Mild)
+			const auto adunit = Mcells[person.mcell].adunit;
+			const auto age_group = HOST_AGE_GROUP(ai);
+			auto& state = StateT[tn];
+
+			if (person.Severity_Current == Severity_Mild)
 			{
-				StateT[tn].Mild--;
-				StateT[tn].Mild_age[HOST_AGE_GROUP(ai)]--;
-				if (P.DoAdUnits) StateT[tn].Mild_adunit[Mcells[a->mcell].adunit]--;
+				state.Mild--;
+				state.Mild_age[age_group]--;
+				if (P.DoAdUnits) state.Mild_adunit[adunit]--;
 				//// change current status (so that flags work if function called again for same person). Don't move this outside of this if statement, even though it looks like it can be moved safely. It can't.
-				a->Severity_Current = Severity_Recovered;
+				person.Severity_Current = Severity_Recovered;
 			}
-			else if (a->Severity_Current == Severity_ILI)
+			else if (person.Severity_Current == Severity_ILI)
 			{
-				StateT[tn].ILI--;
-				StateT[tn].ILI_age[HOST_AGE_GROUP(ai)]--;
-				if (P.DoAdUnits) StateT[tn].ILI_adunit[Mcells[a->mcell].adunit]--;
+				state.ILI--;
+				state.ILI_age[age_group]--;
+				if (P.DoAdUnits) state.ILI_adunit[adunit]--;
 				//// change current status (so that flags work if function called again for same person). Don't move this outside of this if statement, even though it looks like it can be moved safely. It can't.
-				a->Severity_Current = Severity_Recovered;
+				person.Severity_Current = Severity_Recovered;
 			}
-			else if (a->Severity_Current == Severity_SARI)
+			else if (person.Severity_Current == Severity_SARI)
 			{
-				StateT[tn].SARI--;
-				StateT[tn].SARI_age[HOST_AGE_GROUP(ai)]--;
-				if (P.DoAdUnits) StateT[tn].SARI_adunit[Mcells[a->mcell].adunit]--;
+				state.SARI--;
+				state.SARI_age[age_group]--;
+				if (P.DoAdUnits) state.SARI_adunit[adunit]--;
 				//// change current status (so that flags work if function called again for same person). Don't move this outside of this if statement, even though it looks like it can be moved safely. It can't.
-				a->Severity_Current = Severity_Recovered;
+				person.Severity_Current = Severity_Recovered;
 			}
-			else if (a->Severity_Current == Severity_RecoveringFromCritical)
+			else if (person.Severity_Current == Severity_RecoveringFromCritical)
 			{
-				StateT[tn].CritRecov--; //// decrement CritRecov, not critical.
-				StateT[tn].CritRecov_age[HOST_AGE_GROUP(ai)]--;
-				if (P.DoAdUnits) StateT[tn].CritRecov_adunit[Mcells[a->mcell].adunit]--;
+				state.CritRecov--; //// decrement CritRecov, not critical.
+				state.CritRecov_age[age_group]--;
+				if (P.DoAdUnits) state.CritRecov_adunit[adunit]--;
 				//// change current status (so that flags work if function called again for same person). Don't move this outside of this if statement, even though it looks like it can be moved safely. It can't.
-				a->Severity_Current = Severity_Recovered;
+				person.Severity_Current = Severity_Recovered;
 			}
 		}
 }
 
 void DoIncub(int ai, unsigned short int ts, int tn, int run)
 {
-	Person* a;
 	double q;
-	int age;
 
-	age = HOST_AGE_GROUP(ai);
+	int age = HOST_AGE_GROUP(ai);
 	if (age >= NUM_AGE_GROUPS) age = NUM_AGE_GROUPS - 1;
 
-	a = Hosts + ai;
-	if (a->inf == InfStat_Latent)
+	auto& person = *(Hosts + ai);
+	if (person.inf == InfStat_Latent)
 	{
-		a->infectiousness = (float)P.AgeInfectiousness[age];
-		if (P.InfectiousnessSD > 0) a->infectiousness *= (float) gen_gamma_mt(1 / (P.InfectiousnessSD * P.InfectiousnessSD), 1 / (P.InfectiousnessSD * P.InfectiousnessSD), tn);
+		person.infectiousness = (float)P.AgeInfectiousness[age];
+		if (P.InfectiousnessSD > 0) person.infectiousness *= (float) gen_gamma_mt(1 / (P.InfectiousnessSD * P.InfectiousnessSD), 1 / (P.InfectiousnessSD * P.InfectiousnessSD), tn);
 		q = P.ProportionSymptomatic[age]
 			* (HOST_TREATED(ai) ? (1 - P.TreatSympDrop) : 1)
 			* (HOST_VACCED(ai) ? (1 - P.VaccSympDrop) : 1);
 
 		if (ranf_mt(tn) < q)
 		{
-			a->inf = InfStat_InfectiousAlmostSymptomatic;
-			a->infectiousness *= (float)(-P.SymptInfectiousness);
+			person.inf = InfStat_InfectiousAlmostSymptomatic;
+			person.infectiousness *= (float)(-P.SymptInfectiousness);
 		}
 		else
-			a->inf = InfStat_InfectiousAsymptomaticNotCase;
+			person.inf = InfStat_InfectiousAsymptomaticNotCase;
 
-		if (!P.DoSeverity || a->inf == InfStat_InfectiousAsymptomaticNotCase) //// if not doing severity or if person asymptomatic.
+		if (!P.DoSeverity || person.inf == InfStat_InfectiousAsymptomaticNotCase) //// if not doing severity or if person asymptomatic.
 		{
-			if (P.DoInfectiousnessProfile)	a->recovery_or_death_time = a->latent_time + (unsigned short int) (P.InfectiousPeriod * P.TimeStepsPerDay);
-			else							a->recovery_or_death_time = a->latent_time + ChooseFromICDF(P.infectious_icdf, P.InfectiousPeriod, tn);
+			if (P.DoInfectiousnessProfile)	person.recovery_or_death_time = person.latent_time + (unsigned short int) (P.InfectiousPeriod * P.TimeStepsPerDay);
+			else							person.recovery_or_death_time = person.latent_time + ChooseFromICDF(P.infectious_icdf, P.InfectiousPeriod, tn);
 		}
 		else
 		{
-			int CaseTime = a->latent_time + ((int)(P.LatentToSymptDelay / P.TimeStep)); //// base severity times on CaseTime, not latent time. Otherwise there are edge cases where recovery time is zero days after latent_time and therefore before DoCase called in IncubRecoverySweep (i.e. people can recover before they've become a case!).
+			int CaseTime = person.latent_time + ((int)(P.LatentToSymptDelay / P.TimeStep)); //// base severity times on CaseTime, not latent time. Otherwise there are edge cases where recovery time is zero days after latent_time and therefore before DoCase called in IncubRecoverySweep (i.e. people can recover before they've become a case!).
 
 			//// choose final disease severity (either mild, ILI, SARI, Critical, not asymptomatic as covered above) by age
-			a->Severity_Final = ChooseFinalDiseaseSeverity(age, tn);
+			person.Severity_Final = ChooseFinalDiseaseSeverity(age, tn);
 
 			/// choose outcome recovery or death
-			if (	((a->Severity_Final == Severity_Critical)	&& (ranf_mt(tn) < P.CFR_Critical_ByAge	[age]))		||
-					((a->Severity_Final == Severity_SARI	)	&& (ranf_mt(tn) < P.CFR_SARI_ByAge		[age]))		||
-					((a->Severity_Final == Severity_ILI		)	&& (ranf_mt(tn) < P.CFR_ILI_ByAge		[age]))		)
-				a->to_die = 1;
+			if (	((person.Severity_Final == Severity_Critical)	&& (ranf_mt(tn) < P.CFR_Critical_ByAge	[age]))		||
+					((person.Severity_Final == Severity_SARI	)	&& (ranf_mt(tn) < P.CFR_SARI_ByAge		[age]))		||
+					((person.Severity_Final == Severity_ILI		)	&& (ranf_mt(tn) < P.CFR_ILI_ByAge		[age]))		)
+				person.to_die = 1;
 
 			//// choose events and event times
-			if (a->Severity_Final == Severity_Mild)
-				a->recovery_or_death_time = CaseTime + ChooseFromICDF(P.MildToRecovery_icdf, P.Mean_MildToRecovery[age], tn);
-			else if (a->Severity_Final == Severity_Critical)
+			if (person.Severity_Final == Severity_Mild)
+				person.recovery_or_death_time = CaseTime 	+ ChooseFromICDF(P.MildToRecovery_icdf	, P.Mean_MildToRecovery[age], tn);
+			else if (person.Severity_Final == Severity_Critical)
 			{
-				a->SARI_time		= CaseTime		+ ChooseFromICDF(P.ILIToSARI_icdf		, P.Mean_ILIToSARI[age], tn);
-				a->Critical_time	= a->SARI_time	+ ChooseFromICDF(P.SARIToCritical_icdf	, P.Mean_SARIToCritical[age], tn);
-				if (a->to_die)
-					a->recovery_or_death_time = a->Critical_time					+ ChooseFromICDF(P.CriticalToDeath_icdf		, P.Mean_CriticalToDeath[age], tn);
+				person.SARI_time 		= CaseTime			+ ChooseFromICDF(P.ILIToSARI_icdf		, P.Mean_ILIToSARI[age], tn);
+				person.Critical_time 	= person.SARI_time	+ ChooseFromICDF(P.SARIToCritical_icdf	, P.Mean_SARIToCritical[age], tn);
+				if (person.to_die)
+					person.recovery_or_death_time		= person.Critical_time					+ ChooseFromICDF(P.CriticalToDeath_icdf		, P.Mean_CriticalToDeath[age], tn);
 				else
 				{
-					a->RecoveringFromCritical_time	= a->Critical_time					+ ChooseFromICDF(P.CriticalToCritRecov_icdf	, P.Mean_CriticalToCritRecov[age], tn);
-					a->recovery_or_death_time		= a->RecoveringFromCritical_time	+ ChooseFromICDF(P.CritRecovToRecov_icdf	, P.Mean_CritRecovToRecov[age], tn);
+					person.RecoveringFromCritical_time	= person.Critical_time					+ ChooseFromICDF(P.CriticalToCritRecov_icdf	, P.Mean_CriticalToCritRecov[age], tn);
+					person.recovery_or_death_time		= person.RecoveringFromCritical_time	+ ChooseFromICDF(P.CritRecovToRecov_icdf	, P.Mean_CritRecovToRecov[age], tn);
 				}
 			}
-			else if (a->Severity_Final == Severity_SARI)
+			else if (person.Severity_Final == Severity_SARI)
 			{
-				a->SARI_time = CaseTime + ChooseFromICDF(P.ILIToSARI_icdf, P.Mean_ILIToSARI[age], tn);
-				if (a->to_die)
-					a->recovery_or_death_time = a->SARI_time + ChooseFromICDF(P.SARIToDeath_icdf	, P.Mean_SARIToDeath[age], tn);
+				person.SARI_time = CaseTime + ChooseFromICDF(P.ILIToSARI_icdf, P.Mean_ILIToSARI[age], tn);
+				if (person.to_die)
+					person.recovery_or_death_time = person.SARI_time + ChooseFromICDF(P.SARIToDeath_icdf	, P.Mean_SARIToDeath[age], tn);
 				else
-					a->recovery_or_death_time = a->SARI_time + ChooseFromICDF(P.SARIToRecovery_icdf	, P.Mean_SARIToRecovery[age], tn);
+					person.recovery_or_death_time = person.SARI_time + ChooseFromICDF(P.SARIToRecovery_icdf	, P.Mean_SARIToRecovery[age], tn);
 			}
 			else /*i.e. if Severity_Final == Severity_ILI*/
 			{
-				if (a->to_die)
-					a->recovery_or_death_time = CaseTime + ChooseFromICDF(P.ILIToDeath_icdf		, P.Mean_ILIToDeath[age], tn);
+				if (person.to_die)
+					person.recovery_or_death_time = CaseTime + ChooseFromICDF(P.ILIToDeath_icdf		, P.Mean_ILIToDeath[age], tn);
 				else
-					a->recovery_or_death_time = CaseTime + ChooseFromICDF(P.ILIToRecovery_icdf	, P.Mean_ILIToRecovery[age], tn);
+					person.recovery_or_death_time = CaseTime + ChooseFromICDF(P.ILIToRecovery_icdf	, P.Mean_ILIToRecovery[age], tn);
 			}
 		}
 
-		if ((a->inf== InfStat_InfectiousAlmostSymptomatic) && ((P.ControlPropCasesId == 1) || (ranf_mt(tn) < P.ControlPropCasesId)))
+		if ((person.inf== InfStat_InfectiousAlmostSymptomatic) && ((P.ControlPropCasesId == 1) || (ranf_mt(tn) < P.ControlPropCasesId)))
 		{
 			Hosts[ai].detected = 1;
 			Hosts[ai].detected_time = ts + (unsigned short int)(P.LatentToSymptDelay * P.TimeStepsPerDay);
@@ -549,16 +559,15 @@ void DoIncub(int ai, unsigned short int ts, int tn, int run)
 		}
 
 		//// update pointers
+		LatentToInfectious(person.pcell);
+		auto& cell = Cells[person.pcell];
 		
-
-		LatentToInfectious(a->pcell);
-
-		if (Cells[a->pcell].L > 0)
+		if (cell.L > 0)
 		{
-			Cells[a->pcell].susceptible[a->listpos] = Cells[a->pcell].latent[Cells[a->pcell].L]; //// reset pointers.
-			Hosts[Cells[a->pcell].susceptible[a->listpos]].listpos = a->listpos;
-			a->listpos = Cells[a->pcell].S + Cells[a->pcell].L; //// change person a's listpos, which will now refer to their position among infectious people, not latent.
-			Cells[a->pcell].infected[0] = ai; //// this person is now first infectious person in the array. Pointer was moved back one so now that memory address refers to person ai. Alternative would be to move everyone back one which would take longer.
+			cell.susceptible[person.listpos] = cell.latent[cell.L]; //// reset pointers.
+			Hosts[cell.susceptible[person.listpos]].listpos = person.listpos;
+			person.listpos = cell.S + cell.L; //// change person a's listpos, which will now refer to their position among infectious people, not latent.
+			cell.infected[0] = ai; //// this person is now first infectious person in the array. Pointer was moved back one so now that memory address refers to person ai. Alternative would be to move everyone back one which would take longer.
 		}
 	}
 }
@@ -570,29 +579,31 @@ void DoDetectedCase(int ai, double t, unsigned short int ts, int tn)
 	//// and therefore changes lots of quantities (e.g. quar_comply and isolation_start_time) associated with model macros e.g. HOST_ABSENT / HOST_ISOLATED
 
 	int j, k, f, j1, j2, ad; // m, h, ad;
-	Person* a = Hosts + ai;
+	auto& person = *(Hosts + ai);
+	auto& cell = Mcells[person.mcell];
+	auto const& adunit = AdUnits[cell.adunit];
 
 	//// Increment triggers (Based on numbers of detected cases) for interventions. Used in TreatSweep function when not doing Global or Admin triggers. And not when doing ICU triggers.
-	if (Mcells[a->mcell].treat_trig				< USHRT_MAX - 1) Mcells[a->mcell].treat_trig++;
-	if (Mcells[a->mcell].vacc_trig				< USHRT_MAX - 1) Mcells[a->mcell].vacc_trig++;
-	if (Mcells[a->mcell].move_trig				< USHRT_MAX - 1) Mcells[a->mcell].move_trig++;
-	if (Mcells[a->mcell].socdist_trig			< USHRT_MAX - 1) Mcells[a->mcell].socdist_trig++;
-	if (Mcells[a->mcell].keyworkerproph_trig	< USHRT_MAX - 1) Mcells[a->mcell].keyworkerproph_trig++;
+	if (cell.treat_trig				< USHRT_MAX - 1) cell.treat_trig++;
+	if (cell.vacc_trig				< USHRT_MAX - 1) cell.vacc_trig++;
+	if (cell.move_trig				< USHRT_MAX - 1) cell.move_trig++;
+	if (cell.socdist_trig			< USHRT_MAX - 1) cell.socdist_trig++;
+	if (cell.keyworkerproph_trig	< USHRT_MAX - 1) cell.keyworkerproph_trig++;
 
 	if (!P.AbsenteeismPlaceClosure)
 	{
-		if ((P.PlaceCloseRoundHousehold)&& (Mcells[a->mcell].place_trig < USHRT_MAX - 1)) Mcells[a->mcell].place_trig++;
+		if ((P.PlaceCloseRoundHousehold)&& (cell.place_trig < USHRT_MAX - 1)) cell.place_trig++;
 		if ((t >= P.PlaceCloseTimeStart) && (!P.DoAdminTriggers) && (!((P.DoGlobalTriggers)&&(P.PlaceCloseCellIncThresh<1000000000))))
 			for (j = 0; j < P.PlaceTypeNum; j++)
-				if ((j != P.HotelPlaceType) && (a->PlaceLinks[j] >= 0))
+				if ((j != P.HotelPlaceType) && (person.PlaceLinks[j] >= 0))
 				{
-					DoPlaceClose(j, a->PlaceLinks[j], ts, tn, 0);
+					DoPlaceClose(j, person.PlaceLinks[j], ts, tn, 0);
 					if (!P.PlaceCloseRoundHousehold)
 					{
-						if (Mcells[Places[j][a->PlaceLinks[j]].mcell].place_trig < USHRT_MAX - 1)
+						if (Mcells[Places[j][person.PlaceLinks[j]].mcell].place_trig < USHRT_MAX - 1)
 						{
 #pragma omp critical (place_trig)
-							Mcells[Places[j][a->PlaceLinks[j]].mcell].place_trig++;
+							Mcells[Places[j][person.PlaceLinks[j]].mcell].place_trig++;
 						}
 					}
 				}
@@ -615,27 +626,27 @@ void DoDetectedCase(int ai, double t, unsigned short int ts, int tn)
 			{
 				if (t < P.TreatTimeStart + P.TreatPlaceGeogDuration)
 					for (j = 0; j < P.PlaceTypeNum; j++)
-						if (a->PlaceLinks[j] >= 0)
+						if (person.PlaceLinks[j] >= 0)
 						{
 							if (P.DoPlaceGroupTreat)
 							{
 								if ((P.TreatPlaceProbCaseId[j] == 1) || (ranf_mt(tn) < P.TreatPlaceProbCaseId[j]))
 								{
-									StateT[tn].p_queue[j][StateT[tn].np_queue[j]] = a->PlaceLinks[j];
-									StateT[tn].pg_queue[j][StateT[tn].np_queue[j]++] = a->PlaceGroupLinks[j];
+									StateT[tn].p_queue[j][StateT[tn].np_queue[j]] = person.PlaceLinks[j];
+									StateT[tn].pg_queue[j][StateT[tn].np_queue[j]++] = person.PlaceGroupLinks[j];
 								}
 							}
 							else
 							{
 								f = 0;
 #pragma omp critical (starttreat)
-								if (!Places[j][a->PlaceLinks[j]].treat) f = Places[j][a->PlaceLinks[j]].treat = 1;
+								if (!Places[j][person.PlaceLinks[j]].treat) f = Places[j][person.PlaceLinks[j]].treat = 1;
 								if (f)
 								{
 									if ((P.TreatPlaceProbCaseId[j] == 1) || (ranf_mt(tn) < P.TreatPlaceProbCaseId[j]))
-										StateT[tn].p_queue[j][StateT[tn].np_queue[j]++] = a->PlaceLinks[j];
+										StateT[tn].p_queue[j][StateT[tn].np_queue[j]++] = person.PlaceLinks[j];
 									else
-										Places[j][a->PlaceLinks[j]].treat = 0;
+										Places[j][person.PlaceLinks[j]].treat = 0;
 								}
 							}
 						}
@@ -662,8 +673,8 @@ void DoDetectedCase(int ai, double t, unsigned short int ts, int tn)
 
 		//// Giant compound if statement. If doing delays by admin unit, then window of HQuarantine dependent on admin unit-specific duration. This if statement ensures that this timepoint within window, regardless of how window defined.
 		if ((P.DoInterventionDelaysByAdUnit &&
-			(t >= AdUnits[Mcells[a->mcell].adunit].HQuarantineTimeStart		&&	(t < AdUnits[Mcells[a->mcell].adunit].HQuarantineTimeStart + AdUnits[Mcells[a->mcell].adunit].HQuarantineDuration)))		||
-			(t >= AdUnits[Mcells[a->mcell].adunit].HQuarantineTimeStart		&&	(t < AdUnits[Mcells[a->mcell].adunit].HQuarantineTimeStart + P.HQuarantinePolicyDuration))									)
+			(t >= adunit.HQuarantineTimeStart		&&	(t < adunit.HQuarantineTimeStart + adunit.HQuarantineDuration)))		||
+			(t >= adunit.HQuarantineTimeStart		&&	(t < adunit.HQuarantineTimeStart + P.HQuarantinePolicyDuration))									)
 		{
 			j1 = Households[Hosts[ai].hh].FirstPerson; j2 = j1 + Households[Hosts[ai].hh].nh;
 			if ((!HOST_TO_BE_QUARANTINED(j1)) || (P.DoHQretrigger))
@@ -692,15 +703,15 @@ void DoDetectedCase(int ai, double t, unsigned short int ts, int tn)
 
 	//// Giant compound if statement. If doing delays by admin unit, then window of case isolation dependent on admin unit-specific duration. This if statement ensures that this timepoint within window, regardless of how window defined.
 	if ((P.DoInterventionDelaysByAdUnit &&
-		(t >= AdUnits[Mcells[a->mcell].adunit].CaseIsolationTimeStart && (t < AdUnits[Mcells[a->mcell].adunit].CaseIsolationTimeStart + AdUnits[Mcells[a->mcell].adunit].CaseIsolationPolicyDuration)))	||
-		(t >= AdUnits[Mcells[a->mcell].adunit].CaseIsolationTimeStart && (t < AdUnits[Mcells[a->mcell].adunit].CaseIsolationTimeStart + P.CaseIsolationPolicyDuration))								)
+		(t >= adunit.CaseIsolationTimeStart && (t < adunit.CaseIsolationTimeStart + adunit.CaseIsolationPolicyDuration)))	||
+		(t >= adunit.CaseIsolationTimeStart && (t < adunit.CaseIsolationTimeStart + P.CaseIsolationPolicyDuration))								)
 		if ((P.CaseIsolationProp == 1) || (ranf_mt(tn) < P.CaseIsolationProp))
 		{
 			Hosts[ai].isolation_start_time = ts; //// set isolation start time.
 			if (HOST_ABSENT(ai))
 			{
-				if (a->absent_stop_time < ts + P.usCaseAbsenteeismDelay + P.usCaseIsolationDuration) //// ensure that absent_stop_time is at least now + CaseIsolationDuraton
-					a->absent_stop_time = ts + P.usCaseAbsenteeismDelay + P.usCaseIsolationDuration;
+				if (person.absent_stop_time < ts + P.usCaseAbsenteeismDelay + P.usCaseIsolationDuration) //// ensure that absent_stop_time is at least now + CaseIsolationDuraton
+					person.absent_stop_time = ts + P.usCaseAbsenteeismDelay + P.usCaseIsolationDuration;
 			}
 			else if (P.DoRealSymptWithdrawal) /* This calculates adult absenteeism from work due to care of isolated children.  */
 			{
@@ -741,18 +752,18 @@ void DoDetectedCase(int ai, double t, unsigned short int ts, int tn)
 		}
 
 	//add contacts to digital contact tracing, but only if considering contact tracing, we are within the window of the policy and the detected case is a user
-	if ((P.DoDigitalContactTracing) && (t >= AdUnits[Mcells[Hosts[ai].mcell].adunit].DigitalContactTracingTimeStart) && (t < AdUnits[Mcells[Hosts[ai].mcell].adunit].DigitalContactTracingTimeStart + P.DigitalContactTracingPolicyDuration) && (Hosts[ai].digitalContactTracingUser))
+	if ((P.DoDigitalContactTracing) && (t >= adunit.DigitalContactTracingTimeStart) && (t < adunit.DigitalContactTracingTimeStart + P.DigitalContactTracingPolicyDuration) && (Hosts[ai].digitalContactTracingUser))
 	{
 
 		// allow for DCT to isolate index cases
 		if ((P.DCTIsolateIndexCases) && (Hosts[ai].index_case_dct==0))//(Hosts[ai].digitalContactTraced == 0)&& - currently removed this condition as it would mean that someone already under isolation wouldn't have their isolation extended
 		{
-			ad = Mcells[Hosts[ai].mcell].adunit;
+			ad = cell.adunit;
 			//if (AdUnits[j].ndct < AdUnits[j].n)
-			if(StateT[tn].ndct_queue[ad] < AdUnits[ad].n)
+			if(StateT[tn].ndct_queue[cell.adunit] < adunit.n)
 			{
 				//if we are isolating an index case, we set their infector as -1 in order to get the timings consistent.
-				StateT[tn].dct_queue[ad][StateT[tn].ndct_queue[ad]++] = { ai,-1,ts };
+				StateT[tn].dct_queue[cell.adunit][StateT[tn].ndct_queue[cell.adunit]++] = { ai,-1,ts };
 			}
 			else
 			{
